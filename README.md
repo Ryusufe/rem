@@ -1,6 +1,6 @@
 # rem
 
-`rem` is command line memory manager, it not a intended to be used as a notebook or some fancy information displayer.
+`rem` is command line memory manager, its not intended to be used as a notebook or some fancy information displayer.
 
 all rem does is this :
 MemroyFile [locked?] -> ListOfMemories -> { id, date, keywords, memory }
