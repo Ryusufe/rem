@@ -1,0 +1,9 @@
+
+# Where memories go if -f is not specified.
+default_file=memory
+
+# preferred text editor (vim, nano, etc.) for editing memories. 
+default_editor=nano
+
+# always use an editor when adding/editing a memory (0: yes, 1: no).
+use_editor=1
