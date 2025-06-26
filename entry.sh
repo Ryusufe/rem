@@ -48,11 +48,12 @@ show_help()
 	printf "  %-30s %s\n" "-f, --file [name]" "Specify the memory file to use. If the file doesn’t exist, you’ll be prompted to create it."
 	printf "  %-30s %s\n" "-a, --add" "Adds a new memory"
 	printf "  %-30s %s\n" "-s, --search [arg]" "Searches for a memory. The argument is optional"
-	printf "  %-30s %s\n" "-d, --delete [ID]" "Removes a memory from ID. ID is required"
+	printf "  %-30s %s\n" "-d, --delete [ID/index]" "Removes a memory from ID or index. ID or index is required"
 	printf "  %-30s %s\n" "-df, --delete-file [name]" "Removes a file memory from name. name is required"
-	printf "  %-30s %s\n" "-e, --edit [ID]" "Edits a memory from ID. ID is required."
+	printf "  %-30s %s\n" "-e, --edit [ID/index]" "Edits a memory from ID or index. ID or index is required."
 	printf "  %-30s %s\n" "-p, --password [name]" "Sets/changes password of a file."
-	printf "  %-30s %s\n" "-l, --list-all" "Lists all memory."
+	printf "  %-30s %s\n" "-l, --list [ID/index]" "Lists memory either by id or index."
+	printf "  %-30s %s\n" "-la, --list-all" "Lists all memory."
 	printf "  %-30s %s\n" "-lf, --list-files" "Lists all memory files."
 	printf "  %-30s %s\n" "-v, --version" "Shows version."
 
@@ -81,151 +82,162 @@ multi_arg()
 	shift
 }
 
-
-while [[ $# -gt 0 ]]; do
-	case "$1" in
-		-a|--add|-ae)
-			if [ "$1" = "-ae" ];then
-				USE_EDITOR=0
-			fi
-			add
-			shift
-			;;
-		-s|--search)
-			if [[ -n "$2" && "$2" != -* ]]; then
-				CURRENT=""
-				while [[ -n "$2" && "$2" != -* ]]; do
-					CURRENT="$CURRENT $2"
-					shift
-				done
-				search_warg "$CURRENT"
-				shift 
-			else
-				search
+if [ $# -gt 0 ]; then
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+			-a|--add|-ae)
+				if [ "$1" = "-ae" ];then
+					USE_EDITOR=0
+				fi
+				add
 				shift
-			fi
-			;;
-		-p|--password)
-			if [[ -n "$2" && "$2" != -* ]]; then
-				password "$2"
-				shift 2
-			else
-				echo "name is required"
+				;;
+			-s|--search)
+				if [[ -n "$2" && "$2" != -* ]]; then
+					CURRENT=""
+					while [[ -n "$2" && "$2" != -* ]]; do
+						CURRENT="$CURRENT $2"
+						shift
+					done
+					search_warg "$CURRENT"
+					shift 
+				else
+					search
+					shift
+				fi
+				;;
+			-p|--password)
+				if [[ -n "$2" && "$2" != -* ]]; then
+					password "$2"
+					shift 2
+				else
+					echo "name is required"
+					exit 1
+				fi
+				;;
+			-d|--delete)
+				if [[ -n "$2" && "$2" != -* ]]; then
+					delete_memory "$2"
+					shift 2
+				else
+					echo "ID or index is required"
+					exit 1
+				fi
+				;;
+			-e|--edit|-ee)
+				if [ "$1" = "-ee" ];then
+					USE_EDITOR=0
+				fi
+				if [[ -n "$2" && "$2" != -* ]]; then
+					edit_memory "$2"
+					shift 2
+				else
+					echo "ID is required"
+					exit 1
+				fi
+				;;
+			-l|--list)
+				if [[ -n "$2" && "$2" != -* ]]; then
+					list "$2"
+					shift 2
+				else
+					echo "ID or index is required"
+					exit 1
+				fi
+				;;
+			-la|--list-all)
+				list_all
+				shift
+				;;
+			-lf|--list-files)
+				list_files
+				shift
+				;;
+			-df|--delete-file)
+				if [[ -n "$2" && "$2" != -* ]]; then
+					delete_file "$2"
+					shift 2
+				else
+					echo "name is required"
+					exit 1
+				fi
+				;;
+			-h|--help)
+				show_help		
+				shift
+				;;
+			-f|--file)
+				if [[ -n "$2" && "$2" != -* ]]; then
+					file "$2"
+					shift 2
+				else
+					message reject "file name required"
+					exit 1
+				fi
+				;;
+			-v|--version)
+				echo -e "\nVersion : $VERSION\n"
+				shift
+				break
+				;;
+			--default-file)
+				echo -e "\n default_file = $FILE \n"
+				shift
+				break
+				;;
+			--set-default-file)
+				if [[ -n "$2" && "$2" != -* ]];then
+					set_default_file "$2"
+					shift 2
+				else
+					message reject "file name required"
+					exit 1
+				fi
+				break
+				;;
+			--default-editor)
+				echo -e "\n default_editor = $EDITOR \n"
+				shift
+				break
+				;;
+			--set-default-editor)
+				if [[ -n "$2" && "$2" != -* ]];then
+					set_default_editor "$2"
+					shift 2
+				else
+					message reject "editor command required"
+					exit 1
+				fi
+				break
+				;;
+			--use-editor)
+				echo -e "\n use_editor = $USE_EDITOR \n"
+				shift
+				break
+				;;
+			--set-use-editor)
+				if [[ -n "$2" && "$2" != -* ]];then
+					set_use_editor "$2"
+					shift 2
+				else
+					message reject "value is requried (0: yes, 1:no)"
+					exit 1
+				fi
+				break
+				;;
+			--)
+				shift
+				break
+				;;
+			*)
+				show_help
 				exit 1
-			fi
-			;;
-		-d|--delete)
-			if [[ -n "$2" && "$2" != -* ]]; then
-				delete_memory "$2"
-				shift 2
-			else
-				echo "ID is required"
-				exit 1
-			fi
-			;;
-		-e|--edit|-ee)
-			if [ "$1" = "-ee" ];then
-				USE_EDITOR=0
-			fi
-			if [[ -n "$2" && "$2" != -* ]]; then
-				edit_memory "$2"
-				shift 2
-			else
-				echo "ID is required"
-				exit 1
-			fi
-			;;
-		-l|--list-all)
-			list_all
-			shift
-			;;
-		-lf|--list-files)
-			list_files
-			shift
-			;;
-		-df|--delete-file)
-			if [[ -n "$2" && "$2" != -* ]]; then
-				delete_file "$2"
-				shift 2
-			else
-				echo "name is required"
-				exit 1
-			fi
-			;;
-		-h|--help)
-			show_help		
-			shift
-			;;
-		-f|--file)
-			if [[ -n "$2" && "$2" != -* ]]; then
-				file "$2"
-				shift 2
-			else
-				message reject "file name required"
-				exit 1
-			fi
-			;;
-		-v|--version)
-			echo -e "\nVersion : $VERSION\n"
-			shift
-			break
-			;;
-		--default-file)
-			echo -e "\n default_file = $FILE \n"
-			shift
-			break
-			;;
-		--set-default-file)
-			if [[ -n "$2" && "$2" != -* ]];then
-				set_default_file "$2"
-				shift 2
-			else
-				message reject "file name required"
-				exit 1
-			fi
-			break
-			;;
-		--default-editor)
-			echo -e "\n default_editor = $EDITOR \n"
-			shift
-			break
-			;;
-		--set-default-editor)
-			if [[ -n "$2" && "$2" != -* ]];then
-				set_default_editor "$2"
-				shift 2
-			else
-				message reject "editor command required"
-				exit 1
-			fi
-			break
-			;;
-		--use-editor)
-			echo -e "\n use_editor = $USE_EDITOR \n"
-			shift
-			break
-			;;
-		--set-use-editor)
-			if [[ -n "$2" && "$2" != -* ]];then
-				set_use_editor "$2"
-				shift 2
-			else
-				message reject "value is requried (0: yes, 1:no)"
-				exit 1
-			fi
-			break
-			;;
-		--)
-			echo "done"
-			shift
-			break
-			;;
-		*)
-			show_help
-			exit 1
-			;;
-	esac
-done
+				;;
+		esac
+	done
+else
+	show_help
+fi
 
 pre_break
 

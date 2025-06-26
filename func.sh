@@ -72,13 +72,42 @@ list_all()
 	output_list "$(cat "$FULL_PATH")"
 }
 
+list()
+{
+	INPUT_TYPE="$(id_or_index "$1")"
+	if [ $INPUT_TYPE -eq 0 ]; then
+		list_by_id "$1"
+	else
+		list_by_index "$1"
+	fi
+}
+
+list_by_id(){
+	output_list "$(grep "^$1" "$STORAGE/$FILE")"
+}
+
+list_by_index()
+{
+	# if [ "$(wc -l < "$STORAGE/$FILE" | tr -d ' ')" -ge "$(("$1" + 1))" ]; then
+	output_list "$(head -n $(("$1" + 1)) "$STORAGE/$FILE" | tail -n 1)"
+	# else
+	# 	message reject "index is out of range"
+	# fi
+}
 
 delete_memory()
 {
-	TARGET_LINE="$(cat "$FULL_PATH" | grep -n "$1")"
-	LINE_INDEX="$( echo $TARGET_LINE | cut -d: -f1)"
-	LINE_TEXT="$( echo $TARGET_LINE | cut -d: -f2)"
-	output_list "$LINE_TEXT"
+	INPUT_TYPE="$(id_or_index "$1")"
+	LINE_INDEX=""
+	if [ $INPUT_TYPE -eq 0 ]; then
+		TARGET_LINE="$(cat "$FULL_PATH" | grep -n "$1")"
+		LINE_INDEX="$( echo $TARGET_LINE | cut -d: -f1)"
+		LINE_TEXT="$( echo $TARGET_LINE | cut -d: -f2-)"
+		output_list "$LINE_TEXT"
+	else
+		LINE_INDEX="$(("$1" + 1))"
+		list_by_index "$1"
+	fi
 	ask "You sure you want to remove it? (y/n)"
 	if [ $ANSWER = "y" ]; then
 		sed -i "${LINE_INDEX}d" "$FULL_PATH"
@@ -90,9 +119,18 @@ delete_memory()
 
 edit_memory()
 {
-	TARGET_LINE="$(cat "$FULL_PATH" | grep -n "$1")"
-	LINE_INDEX="$( echo $TARGET_LINE | cut -d: -f1)"
-	LINE_TEXT="$( echo $TARGET_LINE | cut -d: -f2-)"
+
+	INPUT_TYPE="$(id_or_index "$1")"
+	LINE_INDEX=""
+	LINE_TEXT=""
+	if [ $INPUT_TYPE -eq 0 ]; then
+		TARGET_LINE="$(cat "$FULL_PATH" | grep -n "$1")"
+		LINE_INDEX="$( echo $TARGET_LINE | cut -d: -f1)"
+		LINE_TEXT="$( echo $TARGET_LINE | cut -d: -f2-)"
+	else
+		LINE_INDEX="$(("$1" + 1))"
+		LINE_TEXT="$(head -n $(("$1" + 1)) "$STORAGE/$FILE" | tail -n 1)"
+	fi
 	temp=$(mktemp)
 	IFS="|" read -r -a LINE_PARTS <<< "$LINE_TEXT"
 	if [ "$USE_EDITOR" -eq 0 ]; then
@@ -209,7 +247,7 @@ ask()
 
 random_id()
 {
-	cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 32 | head -n 1
+	echo -n "i$(cat /dev/urandom | tr -dc 'a-f0-9' | fold -w 32 | head -n 1)"
 }
 
 clean_str(){
@@ -350,4 +388,22 @@ message()
 
 get_date(){
 	echo -n "$(date +"%F %H:%M")" 
+}
+
+
+id_or_index()
+{
+	case "$1" in
+		i*)
+			echo -n 0
+			;;
+		*)
+			if [ "$(echo -n "$1" | wc -m)" -eq 32 ]; then
+				echo 0
+			else
+				echo 1
+			fi		
+			;;
+	esac
+
 }

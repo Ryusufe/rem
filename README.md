@@ -16,14 +16,17 @@ To use `rem`, you'll need to manually set it up:
 You can make `rem` globally available by creating a symbolic link:
 
 ```bash
-chmod +x entry.sh
-# then you can just add this line to ~/.zshrc or ~/.bashrc:
-alias rem="path_to/rem/entry.sh"
 
-# or create a simple launcher
+# install.sh script will insert an alias into your config shell file :
+chmod +x install.sh
+./install.sh
+-> rem ...
+
+# or you can create a simple launcher
 echo '#!/bin/sh' > /bin/rem
 echo 'sh path_to/rem/entry.sh "$@"' >> /bin/rem
 chmod +x /bin/rem
+-> rem ...
 
 ```
 
@@ -45,13 +48,16 @@ Here are the available commands and their purposes:
 - -s, --search [keywords]
   searches for memories that matches at least 1 keyword from the keywords you have given.
 
-- -e, --edit [ID]
+- -e, --edit [ID / index]
   Edit a memory.
 
-- -d, --delete [ID] 
+- -d, --delete [ID / index] 
   Delete a memory.
 
-- -l, --list-all
+- -l, --list [ID / index]
+  Lists a memory.
+
+- -la, --list-all
   List all memories stored in the current memory file.
 
 ### File Management
